@@ -34,6 +34,11 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse as FastAPIStreamingResponse
 from pydantic import BaseModel, Field
 
+from core.demo.annotation_models import Event
+from core.demo.output_policy import build_demo_payload
+from core.demo.pipeline import process_demo_events
+from core.demo.timeline_normalizer import normalize_timeline_events
+from core.demo.session_state import SessionState
 from core.schemas.common import Message, Role, TextContent, AudioContent, ImageContent, VideoContent, ContentItem
 from core.schemas.chat import ChatRequest, ChatResponse
 from core.schemas.streaming import (
@@ -168,12 +173,13 @@ class MiniCPMOWorker:
         self.state = WorkerState()
         self.processor = _DemoProcessorStub()
 
-        self.timeline: List[Dict[str, Any]] = []
+        self.timeline: List[Event] = []
         self.current_index: int = 0
         self.pending_timestamp_ms: int = 0
         self.pending_audio_samples: int = 0
         self.pending_frame_count: int = 0
         self.system_prompt_text: str = "You are a helpful educational assistant."
+        self.demo_session_state: SessionState = SessionState()
 
         self.last_prefill_result: Dict[str, Any] = {}
         self.last_demo_payload: Dict[str, Any] = {}
@@ -187,38 +193,11 @@ class MiniCPMOWorker:
     def set_demo_timestamp(self, timestamp_ms: Optional[int]) -> None:
         self.pending_timestamp_ms = int(timestamp_ms or 0)
 
-    def _extract_timestamp(self, event: Dict[str, Any]) -> int:
-        return int(event.get("timestamp", 0))
-
-    def _extract_event_type(self, event: Dict[str, Any]) -> str:
-        return str(event.get("event_type", ""))
-
-    def _extract_payload(self, event: Dict[str, Any]) -> Dict[str, Any]:
-        payload = event.get("payload")
-        if isinstance(payload, dict):
-            return payload
-
-        info = event.get("info", {})
-        if isinstance(info, dict):
-            return {
-                "content_text": info.get("input_text", "") or "",
-                "feedback_text": info.get("response_text", "") or "",
-            }
-        return {}
-
-    def _extract_feedback_text(self, event: Dict[str, Any]) -> str:
-        payload = self._extract_payload(event)
-        return str(payload.get("feedback_text") or "")
-
-    def _extract_content_text(self, event: Dict[str, Any]) -> str:
-        payload = self._extract_payload(event)
-        return str(payload.get("content_text") or "")
-
-    def _collect_due_events(self, timestamp_ms: int) -> List[Dict[str, Any]]:
-        due: List[Dict[str, Any]] = []
+    def _collect_due_events(self, timestamp_ms: int) -> List[Event]:
+        due: List[Event] = []
         while self.current_index < len(self.timeline):
             event = self.timeline[self.current_index]
-            if self._extract_timestamp(event) > timestamp_ms:
+            if event.timestamp > timestamp_ms:
                 break
             due.append(event)
             self.current_index += 1
@@ -230,36 +209,23 @@ class MiniCPMOWorker:
     def _build_demo_payload(
         self,
         timestamp_ms: int,
-        due_events: List[Dict[str, Any]]
+        due_events: List[Event]
     ) -> Dict[str, Any]:
-        feedback_events = [
-            e for e in due_events
-            if self._extract_event_type(e) == "agent.feedback.sent"
-            and self._extract_feedback_text(e).strip()
-        ]
-        analysis_events = [
-            e for e in due_events
-            if self._extract_event_type(e).startswith("agent.analysis.")
-        ]
+        self.demo_session_state, _, _ = process_demo_events(
+            self.demo_session_state,
+            due_events,
+            run_policy=False,
+        )
 
-        user_events = [
-            e for e in due_events
-            if self._extract_event_type(e).startswith("user.")
-        ]
-
-        visible_texts = [self._extract_feedback_text(e) for e in feedback_events]
-        visible_text = "\n".join([t for t in visible_texts if t.strip()])
-
-        return {
-            "timestamp_ms": timestamp_ms,
-            "user_events": user_events,
-            "analysis_events": analysis_events,
-            "feedback_events": feedback_events,
-            "visible_text": visible_text,
-            "is_listen": len(feedback_events) == 0,
-            "pending_audio_samples": self.pending_audio_samples,
-            "pending_frame_count": self.pending_frame_count,
-        }
+        payload = build_demo_payload(
+            self.demo_session_state,
+            timestamp_ms=timestamp_ms,
+            events=due_events,
+            pending_audio_samples=self.pending_audio_samples,
+            pending_frame_count=self.pending_frame_count,
+        )
+        payload["normalized_events"] = [event.model_dump(mode="json") for event in due_events]
+        return payload
 
     def _construct_model(self, cls, **kwargs):
         if hasattr(cls, "model_construct"):
@@ -285,10 +251,11 @@ class MiniCPMOWorker:
         if not isinstance(raw, list):
             raise ValueError("Demo annotation JSON must be a list of events")
 
-        self.timeline = sorted(raw, key=self._extract_timestamp)
+        self.timeline = normalize_timeline_events(raw)
         self.current_index = 0
         self.last_prefill_result = {}
         self.last_demo_payload = {}
+        self.demo_session_state = SessionState()
 
         self.state.status = WorkerStatus.IDLE
         logger.info(f"[GPU {self.gpu_id}] Demo annotation loaded successfully: {len(self.timeline)} events")
@@ -448,6 +415,7 @@ class MiniCPMOWorker:
         self.pending_frame_count = 0
         self.last_prefill_result = {}
         self.last_demo_payload = {}
+        self.demo_session_state = SessionState()
 
         prompt = f"[DEMO DUPLEX PREPARE] prompt_len={len(self.system_prompt_text)} events={len(self.timeline)}"
         logger.info(f"[GPU {self.gpu_id}] {prompt}")

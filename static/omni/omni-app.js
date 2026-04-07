@@ -440,7 +440,7 @@ class LiveMediaProvider extends MediaProvider {
     getVideoElement() { return this._videoEl; }
 }
 
-const FILE_MAX_DURATION = 120; // 2 minutes
+const FILE_MAX_DURATION = 240; // 2 minutes
 
 class FileMediaProvider extends MediaProvider {
     /**
