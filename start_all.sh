@@ -25,7 +25,8 @@ done
 # ============ 配置 ============
 # 从 config.py 读取端口配置
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV_PYTHON="$PROJECT_DIR/.venv/base/bin/python"
+# VENV_PYTHON="$PROJECT_DIR/.venv/base/bin/python"
+CUDA_VISIBLE_DEVICES="0"
 
 GATEWAY_PORT=$($VENV_PYTHON -c "import sys; sys.path.insert(0,'$PROJECT_DIR'); from config import get_config; print(get_config().gateway_port)" 2>/dev/null || echo "10024")
 WORKER_BASE_PORT=$($VENV_PYTHON -c "import sys; sys.path.insert(0,'$PROJECT_DIR'); from config import get_config; print(get_config().worker_base_port)" 2>/dev/null || echo "22400")
@@ -59,7 +60,7 @@ for GPU_ID in $(echo "$GPU_LIST" | tr ',' ' '); do
 
     echo "[Worker $GPU_IDX] Starting on GPU $GPU_ID, port $WORKER_PORT..."
 
-    nohup env CUDA_VISIBLE_DEVICES=$GPU_ID PYTHONPATH=. $VENV_PYTHON worker.py \
+    nohup env CUDA_VISIBLE_DEVICES=$GPU_ID PYTHONPATH=. $VENV_PYTHON worker_demo.py \
         --port $WORKER_PORT \
         --gpu-id $GPU_ID \
         --worker-index $GPU_IDX \

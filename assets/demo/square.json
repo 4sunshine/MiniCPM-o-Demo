@@ -1,0 +1,834 @@
+[
+  {
+    "event_id": "evt_0001",
+    "timestamp": 2000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.audio.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "modality": "audio"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0002",
+    "timestamp": 12000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.audio.ended",
+    "payload": {
+      "content_text": "I want to solve this problem. Please help me to control, whether I write a solution correctly. If I make mistake, just say that I've mistaken. And propose a way how to correct my problem. If I think too long, please make a hint for me"
+    },
+    "context": {
+      "modality": "audio"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0003",
+    "timestamp": 14000,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.feedback.sent",
+    "payload": {
+      "feedback_text": "Got it. Proceed.",
+      "content_text": "I want to solve this problem. Please help me to control, whether I write a solution correctly. If I make mistake, just say that I've mistaken. And propose a way how to correct my problem. If I think too long, please make a hint for me"
+    },
+    "context": {
+      "reference_event_id": "evt_0002"
+    },
+    "decision": {
+      "decision_type": "task_policy_acknowledged",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "visible"
+    },
+    "meta": {
+      "policy": {
+        "mistake_detection_agent": "Streaming Reasoning Agent",
+        "proactivity_role": "observe_and_alert",
+        "thinking_policy": "hint_on_prolonged_inactivity"
+      }
+    }
+  },
+  {
+    "event_id": "evt_0004",
+    "timestamp": 16000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 1,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0005",
+    "timestamp": 26000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "a=1, b=1, c=-6"
+    },
+    "context": {
+      "segment_id": 1,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0006",
+    "timestamp": 26100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "a=1, b=1, c=-6"
+    },
+    "context": {
+      "reference_segment_id": 1,
+      "reference_event_id": "evt_0005"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0007",
+    "timestamp": 28000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 2,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0008",
+    "timestamp": 34000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "D=b^2-4ac"
+    },
+    "context": {
+      "segment_id": 2,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0009",
+    "timestamp": 34100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "D=b^2-4ac"
+    },
+    "context": {
+      "reference_segment_id": 2,
+      "reference_event_id": "evt_0008"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0010",
+    "timestamp": 37000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 3,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0011",
+    "timestamp": 56000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "D=1^2-4*1*(-6)=1-24=-23"
+    },
+    "context": {
+      "segment_id": 3,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0012",
+    "timestamp": 56100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "D=1^2-4*1*(-6)=1-24=-23"
+    },
+    "context": {
+      "reference_segment_id": 3,
+      "reference_event_id": "evt_0011"
+    },
+    "decision": {
+      "decision_type": "incorrect",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent",
+      "error_type": "sign_error_in_discriminant"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0013",
+    "timestamp": 58000,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.mistake_detected",
+    "payload": {
+      "content_text": "D=1^2-4*1*(-6)=1-24=-23"
+    },
+    "context": {
+      "reference_segment_id": 3,
+      "reference_event_id": "evt_0011"
+    },
+    "decision": {
+      "decision_type": "mistake_detected",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent",
+      "error_type": "sign_error_in_discriminant"
+    },
+    "meta": {
+      "explanation": "Because c=-6, the product 4ac is negative, so D=1-(-24)=25."
+    }
+  },
+  {
+    "event_id": "evt_0014",
+    "timestamp": 58000,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.feedback.sent",
+    "payload": {
+      "feedback_text": "You made a mistake in the sign. Notice that c=−6, so 4ac=4⋅1⋅(−6)=−24. That means: D=1−(−24), not 1−24. Try correcting this step.",
+      "content_text": "D=1^2-4*1*(-6)=1-24=-23"
+    },
+    "context": {
+      "reference_segment_id": 3,
+      "reference_event_id": "evt_0011"
+    },
+    "decision": {
+      "decision_type": "send_correction_feedback",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "visible",
+      "trigger": "mistake_detected"
+    },
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0015",
+    "timestamp": 81000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.editing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 4,
+      "modality": "handwriting",
+      "target": "previous_line"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0016",
+    "timestamp": 90000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.editing.ended",
+    "payload": {
+      "content_text": "D=1-(-24)=25"
+    },
+    "context": {
+      "segment_id": 4,
+      "modality": "handwriting",
+      "target": "previous_line"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0017",
+    "timestamp": 90100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "D=1-(-24)=25"
+    },
+    "context": {
+      "reference_segment_id": 4,
+      "reference_event_id": "evt_0016"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0018",
+    "timestamp": 92000,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.feedback.sent",
+    "payload": {
+      "feedback_text": "This is correct now",
+      "content_text": "D=1-(-24)=25"
+    },
+    "context": {
+      "reference_segment_id": 4,
+      "reference_event_id": "evt_0016"
+    },
+    "decision": {
+      "decision_type": "correction_verified",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "visible"
+    },
+    "meta": {
+      "trigger": "correction_verified"
+    }
+  },
+  {
+    "event_id": "evt_0019",
+    "timestamp": 98000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 5,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0020",
+    "timestamp": 102000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "sqrt(D)=5"
+    },
+    "context": {
+      "segment_id": 5,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0021",
+    "timestamp": 102100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "sqrt(D)=5"
+    },
+    "context": {
+      "reference_segment_id": 5,
+      "reference_event_id": "evt_0020"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0022",
+    "timestamp": 108000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 6,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0023",
+    "timestamp": 117000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "x=(-1±5)/2"
+    },
+    "context": {
+      "segment_id": 6,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0024",
+    "timestamp": 117100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "x=(-1±5)/2"
+    },
+    "context": {
+      "reference_segment_id": 6,
+      "reference_event_id": "evt_0023"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0025",
+    "timestamp": 118000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 7,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0026",
+    "timestamp": 127000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "x1=(-1+5)/2=2"
+    },
+    "context": {
+      "segment_id": 7,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0027",
+    "timestamp": 127100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "x1=(-1+5)/2=2"
+    },
+    "context": {
+      "reference_segment_id": 7,
+      "reference_event_id": "evt_0026"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0028",
+    "timestamp": 132000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 8,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0029",
+    "timestamp": 139000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "x2=(-1-5)/2"
+    },
+    "context": {
+      "segment_id": 8,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0030",
+    "timestamp": 139100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "x2=(-1-5)/2"
+    },
+    "context": {
+      "reference_segment_id": 8,
+      "reference_event_id": "evt_0029"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0031",
+    "timestamp": 140000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 9,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0032",
+    "timestamp": 143000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "x2="
+    },
+    "context": {
+      "segment_id": 9,
+      "modality": "handwriting",
+      "state": "partial_line"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0033",
+    "timestamp": 143100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "x2="
+    },
+    "context": {
+      "reference_segment_id": 9,
+      "reference_event_id": "evt_0032"
+    },
+    "decision": {
+      "decision_type": "incomplete",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0034",
+    "timestamp": 163000,
+    "source": "proactivity_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.activity.inactivity",
+    "payload": {
+      "content_text": "x2="
+    },
+    "context": {
+      "reference_segment_id": 9,
+      "reference_event_id": "evt_0032"
+    },
+    "decision": {
+      "decision_type": "suggest_hint",
+      "producer": "Streaming Proactivity Agent",
+      "alert_for_reasoning_agent": true
+    },
+    "meta": {
+      "inactivity_ms": 20000
+    }
+  },
+  {
+    "event_id": "evt_0035",
+    "timestamp": 164000,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.feedback.sent",
+    "payload": {
+      "feedback_text": "You’re very close. Use the minus case: x=(−1−5)/2",
+      "content_text": "x2="
+    },
+    "context": {
+      "reference_segment_id": 9,
+      "reference_event_id": "evt_0032"
+    },
+    "decision": {
+      "decision_type": "send_hint",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "visible",
+      "trigger": "thinking_too_long"
+    },
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0036",
+    "timestamp": 169000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 10,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0037",
+    "timestamp": 177000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "= -3"
+    },
+    "context": {
+      "segment_id": 10,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0038",
+    "timestamp": 177100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "= -3"
+    },
+    "context": {
+      "reference_segment_id": 10,
+      "reference_event_id": "evt_0037"
+    },
+    "decision": {
+      "decision_type": "correct_so_far",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment",
+      "note": "Interpreted as continuation of the previous line."
+    }
+  },
+  {
+    "event_id": "evt_0039",
+    "timestamp": 184000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.started",
+    "payload": {
+      "content_text": ""
+    },
+    "context": {
+      "segment_id": 11,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0040",
+    "timestamp": 193000,
+    "source": "ui_observer",
+    "actor": "user",
+    "agent_name": "Streaming Proactivity Agent",
+    "event_type": "user.writing.ended",
+    "payload": {
+      "content_text": "final answer/check completed"
+    },
+    "context": {
+      "segment_id": 11,
+      "modality": "handwriting"
+    },
+    "decision": null,
+    "meta": {}
+  },
+  {
+    "event_id": "evt_0041",
+    "timestamp": 193100,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.analysis.segment_checked",
+    "payload": {
+      "content_text": "final answer/check completed"
+    },
+    "context": {
+      "reference_segment_id": 11,
+      "reference_event_id": "evt_0040"
+    },
+    "decision": {
+      "decision_type": "task_completed_candidate",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "silent"
+    },
+    "meta": {
+      "check_scope": "latest_segment"
+    }
+  },
+  {
+    "event_id": "evt_0042",
+    "timestamp": 195000,
+    "source": "reasoning_node",
+    "actor": "assistant",
+    "agent_name": "Streaming Reasoning Agent",
+    "event_type": "agent.feedback.sent",
+    "payload": {
+      "feedback_text": "You've succesfully completed the task",
+      "content_text": ""
+    },
+    "context": {
+      "reference_event_id": "evt_0040",
+      "reference_segment_id": 11
+    },
+    "decision": {
+      "decision_type": "task_completed",
+      "producer": "Streaming Reasoning Agent",
+      "visibility": "visible"
+    },
+    "meta": {
+      "trigger": "task_completed"
+    }
+  }
+]

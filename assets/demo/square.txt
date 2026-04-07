@@ -1,0 +1,35 @@
+0:02 -- Action. User speaking.
+0:12 -- Action. End user speaking.
+0:14 -- Assistant: Got it. Proceed.
+0:16 -- Action. User started writing
+0:26 -- Action. User ended writing
+0:28 -- Action. User started writing
+0:34 -- Action. User ended writing
+0:37 -- Action. User started writing
+0:56 -- Action. User ended writing
+0:58 -- Assistant:
+"You made a mistake in the sign.
+Notice that c=−6, so 4ac=4⋅1⋅(−6)=−24. That means:
+D=1−(−24), not 1−24. Try correcting this step."
+1:21 -- Action. User started editing
+1:30 -- Action. User finished editing 
+1:32 -- Assistant: "This is correct now"
+1:38 -- Action. User started writing
+1:42 -- Action. User ended writing
+1:48 -- Action. User started writing
+1:57 -- Action. User ended writing
+1:58 -- Action. User started writing
+2:07 -- Action. User ended writing
+2:12 -- Action. User started writing
+2:19 -- Action. User ended writing
+2:20 -- Action. User started writing
+2:23 -- Action. User ended writing
+2:43 -- Action. User thinking too long, needs help.
+2:44 -- Assistant:
+"You’re very close. Use the minus case: x=(−1−5)/2"
+2:49 -- Action. User started writing
+2:57 -- Action. User ended writing
+3:04 -- Action. User started writing
+3:13 -- Action. User ended writing
+3:15 -- Assistant:
+"You've succesfully completed the task"
