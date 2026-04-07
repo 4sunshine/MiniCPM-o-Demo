@@ -595,8 +595,9 @@ class FileMediaProvider extends MediaProvider {
         const t0 = performance.now();
         const audio = this._allAudio[this._chunkIdx];
         const frame = this._allFrames[this._chunkIdx] || null;
+        const timestampMs = this._chunkIdx * CHUNK_MS;
         this._chunkIdx++;
-        if (this.onChunk) this.onChunk({ audio, frameBase64: frame });
+        if (this.onChunk) this.onChunk({ audio, frameBase64: frame, timestampMs });
         const elapsed = performance.now() - t0;
         this._timer = setTimeout(() => this._feedNext(), Math.max(0, CHUNK_MS - elapsed));
     }
@@ -743,8 +744,9 @@ class FileMediaProvider extends MediaProvider {
         }
         const frame = this._paddedFrames ? this._paddedFrames[this._chunkIdx] : null;
         this._micChunkCount++;
+        const timestampMs = this._chunkIdx * CHUNK_MS;
         this._chunkIdx++;
-        if (this.onChunk) this.onChunk({ audio: mixedAudio, frameBase64: frame });
+        if (this.onChunk) this.onChunk({ audio: mixedAudio, frameBase64: frame, timestampMs });
     }
 
     // ==================== Recording audio accessors ====================
@@ -1616,6 +1618,7 @@ async function startSession() {
             async () => {
                 media.onChunk = (chunk) => {
                     const msg = { type: 'audio_chunk', audio_base64: arrayBufferToBase64(chunk.audio.buffer) };
+                    if (chunk.timestampMs != null) msg.timestamp_ms = chunk.timestampMs;
                     if (chunk.frameBase64) msg.frame_base64_list = [chunk.frameBase64];
                     const effectiveSlice = getEffectiveMaxSliceNums();
                     if (effectiveSlice > 1) msg.max_slice_nums = effectiveSlice;

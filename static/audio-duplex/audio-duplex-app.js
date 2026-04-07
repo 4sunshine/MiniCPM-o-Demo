@@ -421,8 +421,9 @@ class FileAudioProvider {
         }
         const t0 = performance.now();
         const audio = this._allAudio[this._chunkIdx];
+        const timestampMs = this._chunkIdx * CHUNK_MS;
         this._chunkIdx++;
-        if (this.onChunk) this.onChunk({ audio });
+        if (this.onChunk) this.onChunk({ audio, timestampMs });
         const elapsed = performance.now() - t0;
         this._timer = setTimeout(() => this._feedNext(), Math.max(0, CHUNK_MS - elapsed));
     }
@@ -577,8 +578,9 @@ class FileAudioProvider {
             return;
         }
         this._micChunkCount++;
+        const timestampMs = this._chunkIdx * CHUNK_MS;
         this._chunkIdx++;
-        if (this.onChunk) this.onChunk({ audio: mixedAudio });
+        if (this.onChunk) this.onChunk({ audio: mixedAudio, timestampMs });
     }
 
     // ==================== Audio graph accessors ====================
@@ -981,10 +983,12 @@ async function startSession() {
             preparePayload,
             currentMode === 'live' ? startMicrophone : async () => {
                 media.onChunk = (chunk) => {
-                    session.sendChunk({
+                    const msg = {
                         type: 'audio_chunk',
                         audio_base64: arrayBufferToBase64(chunk.audio.buffer),
-                    });
+                    };
+                    if (chunk.timestampMs != null) msg.timestamp_ms = chunk.timestampMs;
+                    session.sendChunk(msg);
                     if (sessionRecorder) sessionRecorder.pushLeft(chunk.audio);
                 };
                 media.onEnd = () => {
@@ -1055,10 +1059,12 @@ async function startMicrophone() {
         if (e.data.type === 'chunk') {
             if (!session || !session.running || session.paused) return;
             const chunk = e.data.audio;
-            session.sendChunk({
+            const msg = {
                 type: 'audio_chunk',
                 audio_base64: arrayBufferToBase64(chunk.buffer),
-            });
+            };
+            if (e.data.timestampMs != null) msg.timestamp_ms = e.data.timestampMs;
+            session.sendChunk(msg);
             if (sessionRecorder) sessionRecorder.pushLeft(chunk);
         }
     };
