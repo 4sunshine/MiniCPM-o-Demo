@@ -425,10 +425,17 @@ class MiniCPMOWorker:
         self,
         audio_waveform: Optional[np.ndarray] = None,
         frame_list: Optional[list] = None,
+        frame_b64_list: Optional[List[str]] = None,
         max_slice_nums: int = 1,
     ) -> Dict[str, Any]:
         self.pending_audio_samples = int(len(audio_waveform)) if audio_waveform is not None else 0
         self.pending_frame_count = int(len(frame_list)) if frame_list is not None else 0
+
+        if frame_b64_list:
+            self.demo_session_state.remember_frames(
+                frame_b64_list,
+                timestamp_ms=self.pending_timestamp_ms,
+            )
 
         due_events = self._collect_due_events(self.pending_timestamp_ms)
         self.processor.kv_cache_length = len(due_events)
@@ -1527,6 +1534,7 @@ async def duplex_ws(ws: WebSocket):
                         prefill_result = worker.duplex_prefill(
                             audio_waveform=audio_waveform,
                             frame_list=frame_list,
+                            frame_b64_list=frame_b64_list,
                             max_slice_nums=chunk_max_slice_nums,
                         )
                         t_prefill = time.perf_counter()

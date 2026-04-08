@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -77,6 +77,22 @@ class SegmentRecord(BaseModel):
 
 
 # =========================
+# Short-term frame memory
+# =========================
+
+class FrameSnapshot(BaseModel):
+    """
+    A compact, serializable snapshot of a recent video frame.
+    """
+    model_config = ConfigDict(extra="allow")
+
+    frame_b64: str
+    timestamp_ms: int
+    mime_type: str = "image/png"
+    frame_index: Optional[int] = None
+
+
+# =========================
 # Tutor policy snapshot
 # =========================
 
@@ -129,6 +145,7 @@ class SessionState(BaseModel):
     # Segment tracking
     open_segment_id: Optional[int] = None
     segments: Dict[int, SegmentRecord] = Field(default_factory=dict)
+    recent_frames: List[FrameSnapshot] = Field(default_factory=list)
 
     # Policy snapshot
     policy: TutorPolicy = Field(default_factory=TutorPolicy)
@@ -140,3 +157,56 @@ class SessionState(BaseModel):
 
     # Session completion
     task_completed: bool = False
+
+    def remember_frame(
+        self,
+        frame_b64: str,
+        *,
+        timestamp_ms: int,
+        mime_type: str = "image/png",
+        frame_index: Optional[int] = None,
+    ) -> None:
+        """
+        Store one frame in the short-term memory buffer.
+
+        The buffer keeps only the last five frames.
+        """
+        self.recent_frames.append(
+            FrameSnapshot(
+                frame_b64=frame_b64,
+                timestamp_ms=timestamp_ms,
+                mime_type=mime_type,
+                frame_index=frame_index,
+            )
+        )
+        self._trim_recent_frames()
+
+    def remember_frames(
+        self,
+        frame_b64_list: Sequence[str],
+        *,
+        timestamp_ms: int,
+        mime_type: str = "image/png",
+    ) -> None:
+        """
+        Store a sequence of frames in the short-term memory buffer.
+        """
+        for frame_index, frame_b64 in enumerate(frame_b64_list):
+            self.remember_frame(
+                frame_b64,
+                timestamp_ms=timestamp_ms,
+                mime_type=mime_type,
+                frame_index=frame_index,
+            )
+
+    def latest_frame(self) -> Optional[FrameSnapshot]:
+        """
+        Return the newest stored frame snapshot, if any.
+        """
+        if not self.recent_frames:
+            return None
+        return self.recent_frames[-1]
+
+    def _trim_recent_frames(self) -> None:
+        if len(self.recent_frames) > 5:
+            self.recent_frames = self.recent_frames[-5:]
