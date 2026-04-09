@@ -55,12 +55,21 @@ mkdir -p tmp
 WORKER_ADDRS=""
 GPU_IDX=0
 
+# For Gemini via OpenRouter:
+#   export OPENROUTER_API_KEY="..."
+# Optional overrides:
+#   export DEMO_VLM_REASONING_EFFORT=low|medium|high
+
 for GPU_ID in $(echo "$GPU_LIST" | tr ',' ' '); do
     WORKER_PORT=$((WORKER_BASE_PORT + GPU_IDX))
 
     echo "[Worker $GPU_IDX] Starting on GPU $GPU_ID, port $WORKER_PORT..."
 
-    nohup env CUDA_VISIBLE_DEVICES=$GPU_ID PYTHONPATH=. $VENV_PYTHON worker_demo.py \
+    nohup env CUDA_VISIBLE_DEVICES=$GPU_ID PYTHONPATH=. \
+        DEMO_VLM_BACKEND="google_gemini" \
+        DEMO_VLM_MODEL="google/gemini-3.1-flash-lite-preview" \
+        DEMO_VLM_REASONING_EFFORT="low" \
+        $VENV_PYTHON worker_demo.py \
         --port $WORKER_PORT \
         --gpu-id $GPU_ID \
         --worker-index $GPU_IDX \

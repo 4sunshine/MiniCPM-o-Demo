@@ -58,6 +58,8 @@ def handle_reasoning_for_event(
     """
     event_type = _enum_value(event.event_type)
 
+    print("HANDLING_REASONING")
+
     if event_type in {
         EventType.USER_WRITING_ENDED.value,
         EventType.USER_EDITING_ENDED.value,
@@ -209,10 +211,9 @@ def evaluate_segment_text(
     prompt = _build_segment_evaluation_prompt(
         state=state,
         event=event,
-        normalized_text=text,
     )
-
-    print("FRAME", frame)
+    print("TEXT", text)
+    print("FRAME", prompt, frame)
 
     try:
         raw_response = call_multimodal_llm(
@@ -221,10 +222,13 @@ def evaluate_segment_text(
             frame_mime_type=frame.mime_type if frame else "image/png",
             config=_build_segment_vlm_config(),
         )
+        print("RAW", raw_response)
         parsed = _parse_segment_check_result(raw_response)
+        print("PARSED", parsed)
         if parsed is not None:
             return parsed
-    except Exception:
+    except Exception as e:
+        print("VLM_EXC:", e)
         pass
 
     return _fallback_segment_check(text)
@@ -315,9 +319,9 @@ def _build_segment_vlm_config() -> MultimodalLLMConfig:
                 "DEMO_SEGMENT_VLM_MODEL",
                 "DEMO_VLM_MODEL",
             ],
-            default="gpt-4o-mini",
+            default="google/gemini-3.1-flash-lite-preview",
         ),
-        system_prompt="You are a tutoring correctness evaluator.",
+        system_prompt="You are a tutoring correctness evaluator. Judge only the provided step and image evidence.",
     )
 
 
@@ -329,7 +333,7 @@ def _build_hint_vlm_config() -> MultimodalLLMConfig:
                 "DEMO_HINT_VLM_MODEL",
                 "DEMO_VLM_MODEL",
             ],
-            default="gpt-4o-mini",
+            default="google/gemini-3.1-flash-lite-preview",
         ),
         system_prompt="You are a tutoring hint generator.",
     )
@@ -339,45 +343,26 @@ def _build_segment_evaluation_prompt(
     *,
     state: SessionState,
     event: Event,
-    normalized_text: str,
 ) -> str:
-    recent_frames = state.recent_frames[-5:]
-    frame_summary = "\n".join(
-        [
-            f"- frame_index={frame.frame_index}, timestamp_ms={frame.timestamp_ms}, mime_type={frame.mime_type}"
-            for frame in recent_frames
-        ]
-    ) or "- no recent frames available"
-
     return (
         "Evaluate the correctness of the student's latest completed step.\n"
-        "Return ONLY valid JSON with keys:\n"
-        '{ "decision_type": "correct_so_far|incorrect|incomplete|task_completed_candidate", '
+        "Use the written step as the primary evidence.\n"
+        "If the image is unclear or not useful, ignore it rather than guessing.\n"
+        "Return ONLY valid JSON and place the fields in this order:\n"
+        '{ "explanation": string_or_null, '
         '"error_type": string_or_null, '
-        '"explanation": string_or_null, '
-        '"feedback_text": string_or_null }\n\n'
-        f"Student step: {event.payload.content_text}\n"
-        f"Normalized step: {normalized_text}\n"
-        f"Current segment id: {event.context.segment_id}\n"
-        f"Recent frames:\n{frame_summary}\n"
-        "Use the frame when needed, but judge the student's work primarily from the latest step and visible context.\n"
+        '"feedback_text": string_or_null, '
+        '"decision_type": "correct_so_far|incorrect|incomplete|task_completed_candidate" }\n\n'
+        "Write the explanation or decision justification first, then put decision_type last.\n"
     )
 
 
 def _build_inactivity_hint_prompt(state: SessionState, inactivity_event: Event) -> str:
-    latest_frame = state.latest_frame()
-    frame_summary = (
-        f"timestamp_ms={latest_frame.timestamp_ms}, frame_index={latest_frame.frame_index}"
-        if latest_frame is not None
-        else "no recent frame available"
-    )
-
     return (
         "Write one short, helpful hint for a student who has paused work.\n"
-        "Return plain text only.\n\n"
-        f"Observed text: {inactivity_event.payload.content_text}\n"
-        f"Recent frame summary: {frame_summary}\n"
-        "Keep the hint concise, encouraging, and specific to the last visible step."
+        "Return plain text only.\n"
+        "Keep the hint concise, encouraging, and specific to the last visible step.\n"
+        "Do not mention internal state, frame metadata, or OCR-normalized text."
     )
 
 

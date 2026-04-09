@@ -20,7 +20,7 @@ class MultimodalBackend(str, Enum):
 
     OPENAI_CHAT_COMPLETIONS = "openai_chat_completions"
     OPENAI_API = "openai_api"
-    GEMINI_GOOGLE = "gemini_google"
+    GEMINI_GOOGLE = "google_gemini"
 
 
 @dataclass(frozen=True)
@@ -33,6 +33,7 @@ class MultimodalLLMConfig:
     max_output_tokens: int = 512
     timeout_s: float = 60.0
     system_prompt: Optional[str] = None
+    reasoning_effort: str = "low"
     openrouter_site_url: Optional[str] = None
     openrouter_app_name: Optional[str] = None
 
@@ -50,11 +51,12 @@ class MultimodalLLMConfig:
         default_model = {
             MultimodalBackend.OPENAI_CHAT_COMPLETIONS: "gpt-4o-mini",
             MultimodalBackend.OPENAI_API: "gpt-5",
-            MultimodalBackend.GEMINI_GOOGLE: "gemini-2.0-flash",
+            MultimodalBackend.GEMINI_GOOGLE: "google/gemini-3.1-flash-lite-preview",
         }[backend_enum]
 
         if backend_enum == MultimodalBackend.GEMINI_GOOGLE:
-            api_key = os.getenv("DEMO_VLM_API_KEY") or os.getenv("GOOGLE_API_KEY")
+            # Gemini is routed through OpenRouter in demo mode.
+            api_key = os.getenv("DEMO_VLM_API_KEY") or os.getenv("OPENROUTER_API_KEY")
         else:
             api_key = os.getenv("DEMO_VLM_API_KEY") or os.getenv("OPENAI_API_KEY")
 
@@ -67,6 +69,7 @@ class MultimodalLLMConfig:
             max_output_tokens=int(os.getenv("DEMO_VLM_MAX_OUTPUT_TOKENS", "512")),
             timeout_s=float(os.getenv("DEMO_VLM_TIMEOUT_S", "60.0")),
             system_prompt=system_prompt,
+            reasoning_effort=os.getenv("DEMO_VLM_REASONING_EFFORT", "low"),
             openrouter_site_url=os.getenv("OPENROUTER_SITE_URL"),
             openrouter_app_name=os.getenv("OPENROUTER_APP_NAME"),
         )
@@ -90,7 +93,7 @@ def call_multimodal_llm(
     resolved_system_prompt = system_prompt if system_prompt is not None else cfg.system_prompt
 
     if cfg.backend == MultimodalBackend.GEMINI_GOOGLE:
-        return _call_gemini_google(
+        return _call_gemini_openrouter(
             prompt=prompt,
             frame_b64=frame_b64,
             frame_mime_type=frame_mime_type,
@@ -98,6 +101,7 @@ def call_multimodal_llm(
             api_key=cfg.api_key,
             system_prompt=resolved_system_prompt,
             timeout_s=cfg.timeout_s,
+            reasoning_effort=cfg.reasoning_effort,
         )
 
     return _call_openai_compatible(
@@ -187,7 +191,7 @@ def _call_openai_compatible(
     return str(content_text or "").strip()
 
 
-def _call_gemini_google(
+def _call_gemini_openrouter(
     *,
     prompt: str,
     frame_b64: Optional[str],
@@ -196,79 +200,73 @@ def _call_gemini_google(
     api_key: Optional[str],
     system_prompt: Optional[str],
     timeout_s: float,
+    reasoning_effort: str,
 ) -> str:
-    image_bytes = base64.b64decode(frame_b64) if frame_b64 else None
-    image_object = None
-    if image_bytes is not None:
-        try:
-            from PIL import Image
-
-            image_object = Image.open(BytesIO(image_bytes))
-        except Exception:
-            image_object = None
-
     try:
-        from google import genai  # type: ignore
-        from google.genai import types  # type: ignore
-    except Exception:
-        genai = None
-        types = None
-
-    if genai is not None:
-        client = genai.Client(api_key=api_key or os.getenv("GOOGLE_API_KEY"))
-        contents: list[object] = []
-        if system_prompt:
-            contents.append(system_prompt)
-        contents.append(prompt)
-        if image_object is not None:
-            contents.append(image_object)
-        elif image_bytes is not None:
-            contents.append(
-                {
-                    "mime_type": frame_mime_type,
-                    "data": image_bytes,
-                }
-            )
-        config = {}
-        if types is not None:
-            config = {
-                "temperature": 0.0,
-                "max_output_tokens": 512,
-                "response_mime_type": "text/plain",
-            }
-        response = client.models.generate_content(
-            model=model,
-            contents=contents,
-            config=types.GenerateContentConfig(**config) if types is not None else None,
-        )
-        text = getattr(response, "text", None)
-        if text:
-            return str(text).strip()
-
-    try:
-        import google.generativeai as genai_legacy  # type: ignore
+        from openai import OpenAI
     except Exception as exc:  # pragma: no cover - import guard
-        raise RuntimeError("Google Gemini client is required for Gemini VLM calls") from exc
+        raise RuntimeError("openai package is required for OpenRouter Gemini calls") from exc
 
-    genai_legacy.configure(api_key=api_key or os.getenv("GOOGLE_API_KEY"))
-    model_client = genai_legacy.GenerativeModel(
-        model_name=model,
-        system_instruction=system_prompt,
+    resolved_api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+    if not resolved_api_key:
+        raise RuntimeError("OPENROUTER_API_KEY is required for OpenRouter Gemini calls")
+
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=resolved_api_key,
+        timeout=timeout_s,
     )
 
-    parts: list[object] = [prompt]
-    if image_object is not None:
-        parts.append(image_object)
-    elif image_bytes is not None:
-        parts.append(
+    messages: list[dict] = []
+
+    if system_prompt:
+        messages.append(
             {
-                "mime_type": frame_mime_type,
-                "data": image_bytes,
+                "role": "system",
+                "content": system_prompt,
             }
         )
 
-    response = model_client.generate_content(parts, generation_config={"temperature": 0.0})
-    text = getattr(response, "text", None)
+    user_content: list[dict] = [
+        {
+            "type": "text",
+            "text": prompt,
+        }
+    ]
+
+    if frame_b64:
+        data_url = f"data:{frame_mime_type};base64,{frame_b64}"
+        user_content.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": data_url,
+                },
+            }
+        )
+
+    messages.append(
+        {
+            "role": "user",
+            "content": user_content,
+        }
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=0.0,
+        max_tokens=512,
+        extra_body={
+            "reasoning": {
+                "enabled": True,
+                "effort": reasoning_effort,
+            },
+        },
+    )
+
+    message = response.choices[0].message
+    text = message.content
     return str(text or "").strip()
 
 

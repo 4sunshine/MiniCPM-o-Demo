@@ -211,20 +211,22 @@ class MiniCPMOWorker:
         timestamp_ms: int,
         due_events: List[Event]
     ) -> Dict[str, Any]:
-        self.demo_session_state, _, _ = process_demo_events(
+        self.demo_session_state, _, dispatched_events = process_demo_events(
             self.demo_session_state,
             due_events,
-            run_policy=False,
+            run_policy=True,
         )
+
+        replay_events = list(due_events) + list(dispatched_events)
 
         payload = build_demo_payload(
             self.demo_session_state,
             timestamp_ms=timestamp_ms,
-            events=due_events,
+            events=replay_events,
             pending_audio_samples=self.pending_audio_samples,
             pending_frame_count=self.pending_frame_count,
         )
-        payload["normalized_events"] = [event.model_dump(mode="json") for event in due_events]
+        payload["normalized_events"] = [event.model_dump(mode="json") for event in replay_events]
         return payload
 
     def _construct_model(self, cls, **kwargs):
