@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import base64
+import json
 import os
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
+from pathlib import Path
 from typing import Optional, Sequence
 
 
@@ -211,6 +214,14 @@ def _call_gemini_openrouter(
     if not resolved_api_key:
         raise RuntimeError("OPENROUTER_API_KEY is required for OpenRouter Gemini calls")
 
+    request_id, request_path = _dump_gemini_request(
+        prompt=prompt,
+        frame_b64=frame_b64,
+        frame_mime_type=frame_mime_type,
+        model=model,
+        system_prompt=system_prompt,
+    )
+
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=resolved_api_key,
@@ -252,26 +263,99 @@ def _call_gemini_openrouter(
         }
     )
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=0.0,
-        max_tokens=512,
-        extra_body={
-            "reasoning": {
-                "enabled": True,
-                "effort": reasoning_effort,
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.0,
+            max_tokens=512,
+            extra_body={
+                "reasoning": {
+                    "enabled": True,
+                    "effort": reasoning_effort,
+                },
             },
-        },
-    )
+        )
 
-    message = response.choices[0].message
-    text = message.content
-    return str(text or "").strip()
+        message = response.choices[0].message
+        text = message.content
+        output_text = str(text or "").strip()
+        _dump_gemini_output(request_path=request_path, output_text=output_text)
+        return output_text
+    except Exception as exc:
+        _dump_gemini_output(request_path=request_path, output_text=f"[ERROR] {exc}")
+        raise
 
 
 def _data_uri(frame_b64: str, frame_mime_type: str) -> str:
     return f"data:{frame_mime_type};base64,{frame_b64}"
+
+
+def _dump_gemini_request(
+    *,
+    prompt: str,
+    frame_b64: Optional[str],
+    frame_mime_type: str,
+    model: str,
+    system_prompt: Optional[str],
+) -> tuple[Optional[str], Optional[Path]]:
+    dump_dir = _gemini_dump_dir()
+    if dump_dir is None:
+        return None, None
+
+    request_id = _timestamp_request_id()
+    dump_dir.mkdir(parents=True, exist_ok=True)
+
+    request_path = dump_dir / f"{request_id}.json"
+    request_payload = {
+        "request_id": request_id,
+        "model": model,
+        "system_prompt": system_prompt,
+        "prompt": prompt,
+        "frame_mime_type": frame_mime_type,
+        "has_image": bool(frame_b64),
+        "output_text": None,
+    }
+    request_path.write_text(json.dumps(request_payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+    if frame_b64:
+        image_path = dump_dir / f"{request_id}.png"
+        image_path.write_bytes(base64.b64decode(frame_b64))
+
+    return request_id, request_path
+
+
+def _dump_gemini_output(*, request_path: Optional[Path], output_text: str) -> None:
+    if request_path is None:
+        return
+
+    try:
+        payload = json.loads(request_path.read_text(encoding="utf-8"))
+    except Exception:
+        payload = {}
+
+    payload["output_text"] = output_text
+    request_path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+
+def _gemini_dump_dir() -> Optional[Path]:
+    raw_dir = os.getenv("DEMO_GEMINI_DUMP_DIR")
+    if raw_dir:
+        return Path(raw_dir)
+
+    if os.getenv("DEMO_GEMINI_DUMP_DISABLED", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return None
+
+    return Path("tmp") / "gemini_calls"
+
+
+def _timestamp_request_id() -> str:
+    """
+    Build a human-readable request id based on UTC time.
+
+    Example: 20260413T142233.123456Z
+    """
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
 
 
 def _parse_backend(raw_value: str) -> MultimodalBackend:

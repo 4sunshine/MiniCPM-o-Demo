@@ -154,6 +154,7 @@ class SessionState(BaseModel):
     latest_feedback_text: Optional[str] = None
     latest_hint_text: Optional[str] = None
     latest_error_type: Optional[str] = None
+    pending_correction_segment_id: Optional[int] = None
 
     # Session completion
     task_completed: bool = False

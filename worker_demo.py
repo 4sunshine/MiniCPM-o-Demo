@@ -442,8 +442,6 @@ class MiniCPMOWorker:
         due_events = self._collect_due_events(self.pending_timestamp_ms)
         self.processor.kv_cache_length = len(due_events)
 
-        print("PREFILL, ms", self.pending_timestamp_ms, due_events)
-
         self.last_prefill_result = {
             "timestamp_ms": self.pending_timestamp_ms,
             "n_audio_samples": self.pending_audio_samples,
@@ -468,7 +466,6 @@ class MiniCPMOWorker:
         self.last_demo_payload = demo_payload
 
         text = demo_payload["visible_text"]
-        print(demo_payload, "DEMO_PAYLOAD")
         is_listen = True if force_listen else demo_payload["is_listen"]
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000

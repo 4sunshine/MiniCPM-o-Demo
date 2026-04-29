@@ -195,6 +195,7 @@ def _handle_mistake_detected(state: SessionState, event: Event) -> None:
     record.mistake_event_id = event.event_id
     record.last_event_id = event.event_id
     record.reasoning_status = ReasoningStatus.INCORRECT
+    state.pending_correction_segment_id = segment_id
 
     if event.decision and event.decision.error_type:
         state.latest_error_type = event.decision.error_type
@@ -208,7 +209,9 @@ def _handle_feedback_sent(state: SessionState, event: Event) -> None:
         record.last_event_id = event.event_id
 
     feedback_text = event.payload.feedback_text
-    if feedback_text:
+    generated_by_policy = bool(event.meta.get("generated_by_policy"))
+
+    if generated_by_policy and feedback_text:
         state.latest_feedback_text = feedback_text
 
     decision = event.decision
@@ -218,15 +221,19 @@ def _handle_feedback_sent(state: SessionState, event: Event) -> None:
     decision_type = _enum_value(decision.decision_type)
 
     if decision_type == DecisionType.SEND_HINT.value:
-        state.latest_hint_text = feedback_text
+        if generated_by_policy:
+            state.latest_hint_text = feedback_text
 
     elif decision_type == DecisionType.CORRECTION_VERIFIED.value:
-        if segment_id is not None:
+        if generated_by_policy and segment_id is not None:
             record = _get_or_create_segment(state, segment_id)
             record.reasoning_status = ReasoningStatus.CORRECT_SO_FAR
+            state.pending_correction_segment_id = None
 
     elif decision_type == DecisionType.TASK_COMPLETED.value:
-        state.task_completed = True
+        if generated_by_policy:
+            state.task_completed = True
+            state.pending_correction_segment_id = None
 
 
 # =========================

@@ -58,8 +58,6 @@ def handle_reasoning_for_event(
     """
     event_type = _enum_value(event.event_type)
 
-    print("HANDLING_REASONING")
-
     if event_type in {
         EventType.USER_WRITING_ENDED.value,
         EventType.USER_EDITING_ENDED.value,
@@ -134,7 +132,7 @@ def handle_completed_segment(
         emitted.append(feedback_event)
 
     elif result.decision_type == DecisionType.CORRECT_SO_FAR:
-        if is_correction_of_previous_error(state, event):
+        if should_emit_correction_verified(state, event):
             verified_event = build_correction_verified_event(
                 state,
                 timestamp=event.timestamp + 101,
@@ -212,8 +210,6 @@ def evaluate_segment_text(
         state=state,
         event=event,
     )
-    print("TEXT", text)
-    print("FRAME", prompt, frame)
 
     try:
         raw_response = call_multimodal_llm(
@@ -222,13 +218,10 @@ def evaluate_segment_text(
             frame_mime_type=frame.mime_type if frame else "image/png",
             config=_build_segment_vlm_config(),
         )
-        print("RAW", raw_response)
         parsed = _parse_segment_check_result(raw_response)
-        print("PARSED", parsed)
         if parsed is not None:
             return parsed
     except Exception as e:
-        print("VLM_EXC:", e)
         pass
 
     return _fallback_segment_check(text)
@@ -282,26 +275,17 @@ def generate_hint_text(
 # Utility / heuristics
 # =========================
 
-def is_correction_of_previous_error(
+def should_emit_correction_verified(
     state: SessionState,
     event: Event,
 ) -> bool:
     """
-    Heuristic:
-    return True if there was a recent incorrect segment before this event.
+    Return True only for the first correct segment that follows a detected mistake.
 
-    This is useful for emitting a visible 'correction verified' feedback.
+    Once the correction is acknowledged, the pending correction flag is cleared
+    by the reducer so later correct segments stay silent until another mistake.
     """
-    current_segment_id = event.context.segment_id
-    if current_segment_id is None:
-        return False
-
-    for seg_id, record in state.segments.items():
-        if seg_id == current_segment_id:
-            continue
-        if record.reasoning_status.value == "incorrect":
-            return True
-    return False
+    return state.pending_correction_segment_id is not None
 
 
 def normalize_text(text: str) -> str:
@@ -359,10 +343,23 @@ def _build_segment_evaluation_prompt(
 
 def _build_inactivity_hint_prompt(state: SessionState, inactivity_event: Event) -> str:
     return (
-        "Write one short, helpful hint for a student who has paused work.\n"
-        "Return plain text only.\n"
-        "Keep the hint concise, encouraging, and specific to the last visible step.\n"
-        "Do not mention internal state, frame metadata, or OCR-normalized text."
+        "Write one short, context-aware hint for a student who paused mid-step.\n"
+        "\n"
+        "STRICT RULES:\n"
+        "- Focus ONLY on what remains unfinished in the current step.\n"
+        "- DO NOT restate full solution methods or general formulas.\n"
+        "- DO NOT repeat steps the student has already completed.\n"
+        "- Assume the student has already made meaningful progress.\n"
+        "- Refer implicitly to their progress (e.g., 'you already found...', 'now just...').\n"
+        "- Guide toward the *next minimal action*, not the full solution.\n"
+        "- If the student is computing multiple similar results, focus on the missing one.\n"
+        "\n"
+        "STYLE:\n"
+        "- One sentence (max two short sentences).\n"
+        "- Encouraging, precise, and non-redundant.\n"
+        "- No meta commentary.\n"
+        "\n"
+        "OUTPUT: plain text only.\n"
     )
 
 
@@ -392,7 +389,6 @@ def _parse_segment_check_result(raw_response: str) -> Optional[SegmentCheckResul
 
 
 def _fallback_segment_check(text: str) -> SegmentCheckResult:
-    print("FALLBACK_CHECKED")
     if text in {"x2=", "x1=", "d=", "sqrt(d)="} or text.endswith("="):
         return SegmentCheckResult(
             decision_type=DecisionType.INCOMPLETE,

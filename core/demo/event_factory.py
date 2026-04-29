@@ -181,6 +181,7 @@ def build_feedback_event(
     decision_type: DecisionType,
     trigger: Optional[str] = None,
     error_type: Optional[str] = None,
+    meta: Optional[dict] = None,
 ) -> Event:
     """
     Build a visible assistant feedback event.
@@ -214,7 +215,10 @@ def build_feedback_event(
             trigger=trigger,
             error_type=error_type,
         ),
-        meta={},
+        meta={
+            "generated_by_policy": True,
+            **(meta or {}),
+        },
     )
 
 
